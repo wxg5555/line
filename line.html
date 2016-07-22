@@ -1,0 +1,325 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style>
+table {border-collapse: collapse;}
+table td{text-align: center;}
+.boxs table tr td{width:33%;}
+.black{background-color:black;
+       color:white;
+}
+.white{background-color:white;
+       color:black;
+}
+span{
+  disply:block;
+  margin: 2px 1px;
+  border:1px solid #000;
+}
+hr{
+  display:block;
+  height: 10px;
+  background-color:black;
+}
+</style>
+<script type="text/javascript">
+window.onload=function(){
+  var getAttrs=function(obj){
+    var attrs=new Array();
+    for(var attr in obj){
+      attrs.push(attr);
+    }
+    return attrs;
+  };
+  var getValues=function(obj){
+     var values=[];
+     for(var attr in obj){
+       values.push(obj[attr]);
+     }
+     return values;
+  };
+  var getDict=function(obj){
+    s="<table>";
+    for(var attr in obj){
+      s+="<tr><td>"+attr+"</td><td>"+obj[attr]*g_count+"根</td></tr>";
+    }
+    s+="</table>";
+    return s;
+  };
+  var boxs=document.getElementById("boxs");
+  
+  var g_height=190;
+  var g_width=100;
+  var g_count=1;
+  var rows=4;
+  var columns=3;
+  var mainid=5;
+  var doubleface=false;
+  var ct="all";
+  var b_w=0;
+  var b_h=0;
+  var init_line=0;
+  var init_line_b=0;
+  var shortest=0;
+  var total=0;
+  var totalp=0;
+  var net_lines=[];
+  var power_lines=[];
+  var a=30;
+  var netable={};
+  var powertable={};
+  var m=10;
+ 
+  var initbox=function(){
+    total=0;
+    totalp=0;
+    net_lines=[];
+    power_lines=[];
+    netable={};
+    powertable={};
+    b_w=g_width/columns+1;
+    b_h=g_height/rows+1;
+    shortest=60;
+    init_line=60;
+    init_line_b=60;
+    shortestp=100;
+    
+    for(var i=0;i<rows;i++){
+      row=[];
+      rowp=[];
+      for(var j=0;j<columns;j++){
+        row.push([0,0]);
+        rowp.push([0,0]);
+      }
+      net_lines.push(row);
+      power_lines.push(rowp);
+    }
+  };
+  var round=function(ls){
+    ls.forEach(function(v,i){
+        ls[i]=Math.round(v/10.0)*10;
+      });
+    return ls;
+  };
+  var initlinetable=function(){
+    initp=shortestp;
+    initpb=shortestp+b_w+a;
+    
+    for(var c=0;c<columns;c++){
+      if(c==1){
+        init_line=shortest;
+        initp=shortestp;
+        initpb=shortestp+a;
+      }
+      for(var r=0;r<rows;r++){
+        line=init_line+r*b_h;
+        l_b=init_line_b+r*b_h;
+        linep=initp+r*b_h;
+        linepb=initpb+r*b_h;
+        boxid=r*columns+c+1;
+        if(boxid==mainid){
+          line+=m;
+          l_b+=m;
+          linep+=m;
+          linepb+=m;
+        }              
+        net_lines[r][c]=round([line,l_b]);
+        n=net_lines[r][c]
+        netable[n[0]]=netable[n[0]]?netable[n[0]]+1:1;
+        if(doubleface) 
+          netable[n[1]]=netable[n[1]]?netable[n[1]]+1:1;
+        power_lines[r][columns-c-1]=round([linep,linepb]);
+        p=power_lines[r][columns-c-1]; 
+        powertable[p[0]]=powertable[p[0]]?powertable[p[0]]+1:1;
+        if(doubleface)
+          powertable[p[1]]=powertable[p[1]]?powertable[p[1]]+1:1;
+      }
+      init_line+=b_w;
+      init_line_b+=b_w;
+      initp+=b_w;
+      initpb+=b_w;
+    }
+    
+  };
+     
+  var msg=document.getElementById("msg");
+  var showMsg=function(){
+    netmsg="网线总长: "+total*g_count+getDict(netable);
+    powermsg="电源线总长: "+totalp*g_count+getDict(powertable);
+    msg.innerHTML=netmsg+powermsg;
+  };
+
+  var initBoxs=function(){
+    initbox();
+    initlinetable();
+    boxes=[];
+    var bt=document.createElement("table");
+    bt.setAttribute("width","300");
+    bt.setAttribute("height","400");
+    bt.setAttribute("border","1");
+    var boxid=0;
+    for(var i=0;i<rows;i++){
+      var line=document.createElement("tr");
+        for(var j=0;j<columns;j++){
+          box=document.createElement("td");
+          if((boxid+1)==mainid){
+            box.setAttribute("class","black");
+          }
+    showV="";
+    if(ct=="all") showV="前门"+net_lines[i][j][0]+",<font color=red>"+power_lines[i][j][0]+"</font> <br> "+"后门"+net_lines[i][j][1]+",<font color=red>"+power_lines[i][j][1]+"</font>";
+    else if(ct=="fp") showV=power_lines[i][j][0];
+    else if(ct=="fn") showV=net_lines[i][j][0];
+    else if(ct=="bp") showV=power_lines[i][j][1];
+    else if(ct=="bn") showV=net_lines[i][j][1];
+          box.innerHTML=showV;
+          total+=net_lines[i][j][0];
+          if(doubleface) total+=net_lines[i][j][1];
+          totalp+=power_lines[i][j][0];
+          if(doubleface) totalp+=power_lines[i][j][1];
+          box.setAttribute("id",boxid);
+          
+          box.onclick=function(e){
+              td=e.target;
+              bi=td.getAttribute("id");
+              ibi=parseInt(bi);
+              bf=ibi-columns;
+              if(bf>=0){
+                tr=td.parentNode;
+                dsp=td.rowSpan;
+                tr.removeChild(td);
+                boxes[ibi]=0;
+                td=boxes[bf];
+                if(td==0) td=boxes[bf-columns];
+                rs=td.rowSpan;
+                td.rowSpan=rs+1;
+              }
+          };
+          boxid++;
+          line.appendChild(box);
+          boxes.push(box);
+        }
+        bt.appendChild(line);
+      }
+      if(boxs.hasChildNodes()){
+         boxs.removeChild(boxs.firstChild);
+      }
+      boxs.appendChild(bt);
+      showMsg();
+  };
+  initBoxs();
+
+var form=function(v){  
+  return document.forms[0][v].value;
+};
+
+var request=function(){
+   rows=parseInt(form("rows"));
+   columns=parseInt(form("columns"));
+   g_width=parseInt(form("width"));
+   g_height=parseInt(form("height"));
+   g_count=parseInt(form("gc"));
+   mainid=parseInt(form("mainid"));
+   doubleface=document.forms[0]["doubleface"].checked;
+   initBoxs();
+};
+var refresh=document.getElementById("refresh");
+refresh.onclick=function(){
+  request();
+};
+var fp=document.getElementById("fp");
+fp.onclick=function(){
+  fp.setAttribute("class","black");
+  c=document.getElementById(ct);
+  c.setAttribute("class","white");
+  ct="fp";
+  request();
+};
+
+
+var fn=document.getElementById("fn");
+fn.onclick=function(){
+  fn.setAttribute("class","black");
+  c=document.getElementById(ct);
+  c.setAttribute("class","white");
+  ct="fn";
+  request();
+};
+
+var bp=document.getElementById("bp");
+bp.onclick=function(){
+  bp.setAttribute("class","black");
+  c=document.getElementById(ct);
+  c.setAttribute("class","white");
+  ct="bp";
+  request();
+};
+
+
+var bn=document.getElementById("bn");
+  bn.onclick=function(){
+  bn.setAttribute("class","black");
+  c=document.getElementById(ct);
+  c.setAttribute("class","white");
+  ct="bn";
+  request();
+};
+var all=document.getElementById("all");
+all.onclick=function(){
+  all.setAttribute("class","black");
+  c=document.getElementById(ct);
+  c.setAttribute("class","white");
+  ct="all";
+  request();
+};
+var hide=true;
+msg.style.display="none";
+var pswt=document.getElementById("pswitch");
+pswt.onclick=function(){
+  hide=!hide;
+  msg.style.display=hide?"none":"inline";
+};
+var bswt=document.getElementById("bswitch");
+bswt.onclick=function(){
+  hide=!hide;
+  msg.style.display=hide?"none":"inline";
+   
+};
+};
+
+
+</script>
+</head>
+<body>
+
+<div id="myform">
+<table>
+<form>
+<tr><td>行数</td><td><input type="textfield" name="rows" size="10" value="4"></input></td>
+    <td>列数</td><td><input type="textfield" name="columns" size="10" value="3"></input></td></tr>
+<tr><td>宽度</td><td><input type="textfield" name="width" size="10" value="100"></input></td>
+    <td>高度</td><td><input type="textfield" name="height" size="10" value="190"></input></td></tr>
+<tr><td>主控</td><td><input type="textfield" name="mainid" size="10" value="5"></input></td>
+    <td>组数</td><td><input name="gc" type="textfield" size="10" value="1"/></td></tr>
+<tr><td>双面</td><td><input type="checkbox" name="doubleface" size="13"/>
+                    <input id="refresh" type="button" value="refresh" size="13"/></td>
+    <td></td><td></td></tr>
+</form>
+</table>
+<hr/>
+<span id="all">所有</span>
+<span id="fp">前门电源</span>
+<span id="fn">前门网</span>
+<span id="bp">后门电源</span>
+<span id="bn">后门网</span>
+</div>
+<br>
+<div id="boxs">
+</div>
+<div id="foot">
+<hr id="pswitch">﹀</hr>
+<div id="msg">
+</div>
+<hr id="bswitch">﹀</hr>
+</div>
+</body>
+</html>
